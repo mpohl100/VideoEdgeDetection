@@ -8,26 +8,26 @@
 using namespace cv;
 using namespace std;
 
-int main( int argc, char** argv )
+int main(int argc, char** argv)
 {
-   VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from web cam
-   if ( !cap.isOpened() )  // if not success, exit program
-   {
-       cout << "Cannot open the web cam" << endl;
-       return -1;
-   }
+	VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from web cam
+	if (!cap.isOpened())  // if not success, exit program
+	{
+		cout << "Cannot open the web cam" << endl;
+		return -1;
+	}
 
 	std::string control = "Control";
 	std::string threshold = "Thresholded Image";
 	std::string original = "Original";
-    namedWindow(control, WINDOW_AUTOSIZE); //create a window called "Control"
+	namedWindow(control, WINDOW_AUTOSIZE); //create a window called "Control"
 	namedWindow(threshold, WINDOW_AUTOSIZE);
 	namedWindow(original, WINDOW_AUTOSIZE);
 
 	int iLowH = 0;
 	int iHighH = 179;
 
-	int iLowS = 0; 
+	int iLowS = 0;
 	int iHighS = 255;
 
 	int iLowV = 0;
@@ -43,34 +43,33 @@ int main( int argc, char** argv )
 	createTrackbar("LowV", "Control", &iLowV, 255);//Value (0 - 255)
 	createTrackbar("HighV", "Control", &iHighV, 255);
 
-    while (true)
-    {
-        Mat imgOriginal;
-        bool bSuccess = cap.read(imgOriginal); // read a new frame from video
-        if (!bSuccess) //if not success, break loop
-        {
-		    cout << "Cannot read a frame from video stream" << endl;
-            break;
-        }
+	while (true)
+	{
+		Mat imgOriginal;
+		bool bSuccess = cap.read(imgOriginal); // read a new frame from video
+		if (!bSuccess) //if not success, break loop
+		{
+			cout << "Cannot read a frame from video stream" << endl;
+			break;
+		}
 		Mat imgGray;
 		std::vector<Mat> channels;
 		Mat hsv;
 		cvtColor(imgOriginal, hsv, COLOR_RGB2HSV);
 		split(hsv, channels);
 		imgGray = channels[0];
-		
+
 		Mat contours;
 		Canny(imgGray, contours, 35, 90);
 
 		imshow(threshold, contours); //show the thresholded image
 		imshow(original, imgOriginal); //show the original image
 
-        if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
-        {
-            cout << "esc key is pressed by user" << endl;
-            break; 
-        }
-    }
-
-    return 0;
+		if (waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
+		{
+			cout << "esc key is pressed by user" << endl;
+			break;
+		}
+	}
+	return 0;
 }
