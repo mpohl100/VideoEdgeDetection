@@ -9,24 +9,6 @@
 using namespace cv;
 using namespace std;
 
-Mat getContours(Mat const& img)
-{
-	Mat imgGray;
-	std::vector<Mat> channels;
-	Mat hsv;
-	cvtColor(img, hsv, COLOR_RGB2HSV);
-	split(hsv, channels);
-	imgGray = channels[0];
-
-	Mat contours;
-	int min = 35;
-	int max = 90;
-	Canny(imgGray, contours, min, max);
-
-	return contours;
-}
-
-
 static int logCounter = 0;
 
 int gradient(int tl, int tc, int tr, int cl, int cc, int cr, int bl, int bc, int br)
@@ -59,7 +41,6 @@ Mat homeBrewEdgeDetection(Mat const& img)
 	const Vec3b* imgUpper;
 	const Vec3b* imgCenter;
 	const Vec3b* imgLower;
-	//std::set<float, std::greater<float>> mostColorful;
 	for (int j = 1; j < img.rows - 1; ++j)
 	{
 		imgUpper = img.ptr<Vec3b>(j - 1);
@@ -73,24 +54,16 @@ Mat homeBrewEdgeDetection(Mat const& img)
 			{
 				int grad_c = gradient(imgUpper[i - 1][color], imgUpper[i][color], imgUpper[i + 1][color],
 					                  imgCenter[i - 1][color], imgCenter[i][color], imgCenter[i + 1][color],
-					                     imgLower[i - 1][color], imgLower[i][color], imgLower[i + 1][color]);
+					                  imgLower[i - 1][color], imgLower[i][color], imgLower[i + 1][color]);
 				max = grad_c > max ? grad_c : max;
 				sum += grad_c;
 			}
 			float val = float(max) / float(sum);
-			//mostColorful.insert(val);
+			val = std::sqrt(val);
 			val *= max;
 			ret.at<uchar>(j,i) = int(val);
 		}	
 	}
-	//int counter = 0;
-	//for (auto c : mostColorful)
-	//{
-	//	cout << c << " ";
-	//	if (counter++ > 1000) 
-	//		break;
-	//}
-	//cout << '\n';
 	return ret;
 }
 
@@ -141,7 +114,7 @@ int main(int argc, char** argv)
 		{
 			cout << "Cannot read a frame from video stream" << endl;
 			break;
-		}
+	      	}
 		//Mat contours = getContours(imgOriginal);
 		Mat contours = homeBrewEdgeDetection(imgOriginal);
 		imshow(threshold, contours); //show the thresholded image
