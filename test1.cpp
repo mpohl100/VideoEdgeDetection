@@ -8,6 +8,23 @@
 using namespace cv;
 using namespace std;
 
+Mat getContours(Mat const& img)
+{
+	Mat imgGray;
+	std::vector<Mat> channels;
+	Mat hsv;
+	cvtColor(img, hsv, COLOR_RGB2HSV);
+	split(hsv, channels);
+	imgGray = channels[0];
+
+	Mat contours;
+	int min = 35;
+	int max = 90;
+	Canny(imgGray, contours, min, max);
+
+	return contours;
+}
+
 int main(int argc, char** argv)
 {
 	VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from web cam
@@ -52,16 +69,7 @@ int main(int argc, char** argv)
 			cout << "Cannot read a frame from video stream" << endl;
 			break;
 		}
-		Mat imgGray;
-		std::vector<Mat> channels;
-		Mat hsv;
-		cvtColor(imgOriginal, hsv, COLOR_RGB2HSV);
-		split(hsv, channels);
-		imgGray = channels[0];
-
-		Mat contours;
-		Canny(imgGray, contours, 35, 90);
-
+		Mat contours = getContours(imgOriginal);
 		imshow(threshold, contours); //show the thresholded image
 		imshow(original, imgOriginal); //show the original image
 
