@@ -25,9 +25,35 @@ Mat getContours(Mat const& img)
 	return contours;
 }
 
+
+static int logCounter = 0;
+
+int gradient(int tl, int tc, int tr, int cl, int cc, int cr, int bl, int bc, int br)
+{
+	int grad = 0;
+	float grad_tl_br = br - tl;
+	float grad_cl_cr = cr - cl;
+	float grad_bl_tr = tr - bl;
+	float grad_bc_tc = tc - bc;
+	float sqrt2 = std::sqrt(2.0);
+	float grad_x = grad_cl_cr + grad_tl_br * sqrt2 + grad_bl_tr * sqrt2;
+	float grad_y = -grad_bc_tc + grad_tl_br * sqrt2 - grad_bl_tr * sqrt2;
+	float grad_total = std::sqrt(grad_x * grad_x + grad_y * grad_y);
+	grad = int(grad_total);
+	if (logCounter++ < 100) {
+		std::cout << "gradient of:\n";
+		std::cout << tl << " " << tc << " " << tl << '\n';
+		std::cout << cl << " " << cc << " " << cl << '\n';
+		std::cout << bl << " " << bc << " " << bl << '\n';
+		std::cout << "grad_x = " << grad_x << "; grad_y = " << grad_y << "\n";
+		std::cout << "grad = " << grad;
+	}
+	return grad;
+}
+
 Mat homeBrewEdgeDetection(Mat const& img)
 {
-	Mat ret(img);
+	Mat ret = img.clone();
 
 	Vec3b* retCenter;
 	const Vec3b* imgUpper;
@@ -41,42 +67,18 @@ Mat homeBrewEdgeDetection(Mat const& img)
 		imgLower = img.ptr<Vec3b>(j+1);
 		for (int i = 1; i < img.cols - 1; ++i)
 		{
-			// 0=Blue, 1=Green, 2=Red
-			//for (int color = 0; color < 3; color++)
-			//{
-
-			//}
-			int color = 0;
-			float grad_tl_br = imgLower[i + 1][color] - imgUpper[i - 1][color];
-			float grad_cl_cr = imgCenter[i + 1][color] - imgCenter[i - 1][color];
-			float grad_bl_tr = imgUpper[i + 1][color] - imgLower[i - 1][color];
-			float grad_bc_tc = imgUpper[i][color] - imgLower[i][color];
-			float sqrt2 = std::sqrt(2.0);
-			float grad_x = grad_cl_cr + grad_tl_br * sqrt2 + grad_bl_tr * sqrt2;
-			float grad_y = -grad_bc_tc + grad_tl_br * sqrt2 - grad_bl_tr * sqrt2;
-			float grad_total = std::sqrt(grad_x * grad_x + grad_y * grad_y);
-			retCenter[i][color] = int(grad_total);
+			for(int color = 0; color <= 2; color++)
+				retCenter[i][color] = gradient(imgUpper[i-1][color], imgUpper[i][color], imgUpper[i+1][color],
+				                               imgCenter[i-1][color], imgCenter[i][color], imgCenter[i+1][color],
+								               imgLower[i-1][color], imgLower[i][color], imgLower[i+1][color]);
 		}
 	}
 	return ret;
 }
 
-int main(int argc, char** argv)
+void createControl(std::string const& control)
 {
-	VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from web cam
-	if (!cap.isOpened())  // if not success, exit program
-	{
-		cout << "Cannot open the web cam" << endl;
-		return -1;
-	}
-
-	std::string control = "Control";
-	std::string threshold = "Thresholded Image";
-	std::string original = "Original";
 	namedWindow(control, WINDOW_AUTOSIZE); //create a window called "Control"
-	namedWindow(threshold, WINDOW_AUTOSIZE);
-	namedWindow(original, WINDOW_AUTOSIZE);
-
 	int iLowH = 0;
 	int iHighH = 179;
 
@@ -95,6 +97,24 @@ int main(int argc, char** argv)
 
 	createTrackbar("LowV", "Control", &iLowV, 255);//Value (0 - 255)
 	createTrackbar("HighV", "Control", &iHighV, 255);
+
+}
+
+int main(int argc, char** argv)
+{
+	VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from web cam
+	if (!cap.isOpened())  // if not success, exit program
+	{
+		cout << "Cannot open the web cam" << endl;
+		return -1;
+	}
+
+	std::string threshold = "Thresholded Image";
+	std::string original = "Original";
+	namedWindow(threshold, WINDOW_AUTOSIZE);
+	namedWindow(original, WINDOW_AUTOSIZE);
+
+	createControl("Control");
 
 	while (true)
 	{
