@@ -1,9 +1,10 @@
 #include "stdafx.h"
 
-#include <iostream>
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 
+#include <iostream>
+#include <set>
 
 using namespace cv;
 using namespace std;
@@ -40,39 +41,56 @@ int gradient(int tl, int tc, int tr, int cl, int cc, int cr, int bl, int bc, int
 	float grad_y = -grad_bc_tc + grad_tl_br * sqrt2 - grad_bl_tr * sqrt2;
 	float grad_total = std::sqrt(grad_x * grad_x + grad_y * grad_y);
 	grad = int(grad_total);
-	if (logCounter++ < 100) {
+	if (false) {
 		std::cout << "gradient of:\n";
 		std::cout << tl << " " << tc << " " << tl << '\n';
 		std::cout << cl << " " << cc << " " << cl << '\n';
 		std::cout << bl << " " << bc << " " << bl << '\n';
 		std::cout << "grad_x = " << grad_x << "; grad_y = " << grad_y << "\n";
-		std::cout << "grad = " << grad;
+		std::cout << "grad = " << grad << '\n';
 	}
 	return grad;
 }
 
 Mat homeBrewEdgeDetection(Mat const& img)
 {
-	Mat ret = img.clone();
-
-	Vec3b* retCenter;
+	Mat ret;
+	cvtColor(img, ret, COLOR_BGR2GRAY);
 	const Vec3b* imgUpper;
 	const Vec3b* imgCenter;
 	const Vec3b* imgLower;
+	//std::set<float, std::greater<float>> mostColorful;
 	for (int j = 1; j < img.rows - 1; ++j)
 	{
-		retCenter = ret.ptr<Vec3b>(j);
 		imgUpper = img.ptr<Vec3b>(j - 1);
 		imgCenter = img.ptr<Vec3b>(j);
 		imgLower = img.ptr<Vec3b>(j+1);
 		for (int i = 1; i < img.cols - 1; ++i)
 		{
-			for(int color = 0; color <= 2; color++)
-				retCenter[i][color] = gradient(imgUpper[i-1][color], imgUpper[i][color], imgUpper[i+1][color],
-				                               imgCenter[i-1][color], imgCenter[i][color], imgCenter[i+1][color],
-								               imgLower[i-1][color], imgLower[i][color], imgLower[i+1][color]);
-		}
+			int max = 0;
+			int sum = 0;
+			for (int color = 0; color <= 2; color++)
+			{
+				int grad_c = gradient(imgUpper[i - 1][color], imgUpper[i][color], imgUpper[i + 1][color],
+					                  imgCenter[i - 1][color], imgCenter[i][color], imgCenter[i + 1][color],
+					                     imgLower[i - 1][color], imgLower[i][color], imgLower[i + 1][color]);
+				max = grad_c > max ? grad_c : max;
+				sum += grad_c;
+			}
+			float val = float(max) / float(sum);
+			//mostColorful.insert(val);
+			val *= max;
+			ret.at<uchar>(j,i) = int(val);
+		}	
 	}
+	//int counter = 0;
+	//for (auto c : mostColorful)
+	//{
+	//	cout << c << " ";
+	//	if (counter++ > 1000) 
+	//		break;
+	//}
+	//cout << '\n';
 	return ret;
 }
 
@@ -108,13 +126,12 @@ int main(int argc, char** argv)
 		cout << "Cannot open the web cam" << endl;
 		return -1;
 	}
-
-	std::string threshold = "Thresholded Image";
-	std::string original = "Original";
-	namedWindow(threshold, WINDOW_AUTOSIZE);
-	namedWindow(original, WINDOW_AUTOSIZE);
-
 	createControl("Control");
+
+	std::string original = "Original";
+	std::string threshold = "Thresholded Image";
+	namedWindow(original, WINDOW_AUTOSIZE);
+	namedWindow(threshold, WINDOW_AUTOSIZE);
 
 	while (true)
 	{
