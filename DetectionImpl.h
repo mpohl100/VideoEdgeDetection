@@ -1,0 +1,121 @@
+#pragma once
+
+namespace detail {
+	
+	enum class DetectionType {
+		Edge,
+		Gradient,
+	};
+
+
+	static int logCounter = 0;
+	/**
+      * returns the gradient over a pixel
+      * first calculate the x and y gradients over the pixel cc
+      * then return the sqrt(grad_x**2 + grad_y**2)
+      */
+	template<DetectionType detectionType, int threshold>
+	inline auto gradient(int tl, int tc, int tr, int cl, int cc, int cr, int bl, int bc, int br)
+	{
+		int grad = 0;
+		float grad_tl_br = br - tl;
+		float grad_cl_cr = cr - cl;
+		float grad_bl_tr = tr - bl;
+		float grad_bc_tc = tc - bc;
+		float sqrt2 = std::sqrt(2.0);
+		float grad_x = grad_cl_cr + grad_tl_br * sqrt2 + grad_bl_tr * sqrt2;
+		float grad_y = -grad_bc_tc + grad_tl_br * sqrt2 - grad_bl_tr * sqrt2;
+		float grad_total = std::sqrt(grad_x * grad_x + grad_y * grad_y);
+		grad = int(grad_total);
+		if (false) {
+			std::cout << "gradient of:\n";
+			std::cout << tl << " " << tc << " " << tl << '\n';
+			std::cout << cl << " " << cc << " " << cl << '\n';
+			std::cout << bl << " " << bc << " " << bl << '\n';
+			std::cout << "grad_x = " << grad_x << "; grad_y = " << grad_y << "\n";
+			std::cout << "grad = " << grad << '\n';
+		}
+		if constexpr (detectionType == DetectionType::Edge)
+			return grad;
+		else {
+			if (grad <= threshold)
+				return std::pair<int, int>{ 0, 0 };
+			float cosAlpha = grad_x / grad_total;
+			float radians = std::acos(cosAlpha);
+			float degrees = radians * (180.0 / 3.1415926);
+			if (degrees < 0)
+				degrees += 180.0;
+			int degrees_ret = int(degrees);
+			if constexpr(false)
+			{
+				if(logCounter++ < 1000)
+					std::cout << grad << " " << degrees_ret << "\n";
+			}
+ 			return std::pair<int,int>{ grad, degrees_ret };
+		}
+	}
+	/**
+	 * returns a gray scale Mat, takes an BGR / RGB Mat
+	 * iterate over all pixels and calculate the color gradient over it
+	 * the gray scale return matrix represents the ratio of the biggest color channel in relation to the sum of all color channels
+	 * a white pixel means a super high descent and a black pixel means a planar surface
+	 */
+	template<DetectionType detectionType>
+	inline cv::Mat detect_edges(cv::Mat const& bgrImg)
+	{
+		cv::Mat ret;
+		if constexpr (detectionType == DetectionType::Edge)
+			cv::cvtColor(bgrImg, ret, cv::COLOR_BGR2GRAY);
+		else
+			ret = bgrImg.clone();
+		cv::Vec3b* retCenter;
+		const cv::Vec3b* imgUpper;
+		const cv::Vec3b* imgCenter;
+		const cv::Vec3b* imgLower;
+		for (int i = 1; i < bgrImg.rows - 1; ++i)
+		{
+			if constexpr (detectionType == DetectionType::Gradient)
+				retCenter = ret.ptr<cv::Vec3b>(i);
+			imgUpper = bgrImg.ptr<cv::Vec3b>(i - 1);
+			imgCenter = bgrImg.ptr<cv::Vec3b>(i);
+			imgLower = bgrImg.ptr<cv::Vec3b>(i + 1);
+			for (int j = 1; j < bgrImg.cols - 1; ++j)
+			{
+				int max = 0;
+				int sum = 0;
+				int angle = 0;
+				for (int color = 0; color <= 2; color++)
+				{
+					auto ret = gradient<detectionType, 5>(imgUpper[j - 1][color], imgUpper[j][color], imgUpper[j + 1][color],
+						imgCenter[j - 1][color], imgCenter[j][color], imgCenter[j + 1][color],
+						imgLower[j - 1][color], imgLower[j][color], imgLower[j + 1][color]);
+					int grad_c = 0;
+					if constexpr (detectionType == DetectionType::Edge)
+					{
+						grad_c = ret;
+						max = grad_c > max ? grad_c : max;
+					}
+					else
+					{
+						grad_c = ret.first;
+						angle = ret.second;
+					}
+					sum += grad_c;
+				}
+				float val = float(max) / float(sum);
+				val = std::sqrt(val);
+				val *= max;
+
+				if constexpr (detectionType == DetectionType::Edge)
+					ret.at<uchar>(i, j) = int(val);
+				else
+				{
+					retCenter[j][0] = int(val);
+					retCenter[j][1] = angle;
+					retCenter[j][2] = 256;
+				}
+			}
+		}
+		return ret;
+	}
+}

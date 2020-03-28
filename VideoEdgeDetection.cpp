@@ -5,7 +5,6 @@
 
 #include <iostream>
 #include <set>
-#include "Detection.h"
 #include "VideoEdgeDetection.h"
 
 using namespace cv;
@@ -34,7 +33,7 @@ int main(int argc, char** argv)
 			cout << "Cannot read a frame from video stream" << endl;
 			break;
 	    }
-		Mat contours = od::detect_edges(imgOriginal);
+		Mat contours = od::detect_directions(imgOriginal);
 		imshow(threshold, contours); //show the thresholded image
 		imshow(original, imgOriginal); //show the original image
 
