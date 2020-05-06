@@ -1,3 +1,2 @@
 # VideoEdgeDetection
-A custom edge detection algorithm with opencv
-The video link is hardcoded in the application.
+Microsoft Visual Studio project with a custom edge detection algorithm implemented with opencv.
