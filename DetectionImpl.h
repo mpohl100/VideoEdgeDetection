@@ -83,7 +83,7 @@ namespace detail {
 			{
 				int max = 0;
 				int sum = 0;
-				int angle = 0;
+				int degrees = 0;
 				for (int color = 0; color <= 2; color++)
 				{
 					auto ret = gradient<detectionType, 5>(imgUpper[j - 1][color], imgUpper[j][color], imgUpper[j + 1][color],
@@ -98,7 +98,7 @@ namespace detail {
 					else
 					{
 						grad_c = ret.first;
-						angle = ret.second;
+						degrees = ret.second;
 					}
 					sum += grad_c;
 				}
@@ -111,11 +111,11 @@ namespace detail {
 				else
 				{
 					retCenter[j][0] = int(val);
-					retCenter[j][1] = angle;
+					retCenter[j][1] = degrees;
 					retCenter[j][2] = 256;
 				}
 			}
 		}
 		return ret;
 	}
-}
+};
