@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <set>
+#include <random>
 #include "VideoEdgeDetection.h"
 
 void readImageData(cv::VideoCapture& cap, cv::Mat& imgOriginal, int& retflag)
@@ -34,11 +35,19 @@ private:
 	int degrees = 0;
 };
 
+int rand_int()
+{
+	std::random_device rd;
+	std::mt19937 mt(rd());
+	std::uniform_real_distribution<int> dist(0, 110000);
+	return dist(mt);
+}
+
 Ball::Ball(cv::Mat const& mat)
-	: x( rand() % mat.rows )
-	, y( rand() % mat.cols )
-	, threshold(5)
-	, degrees( rand() % 360)
+	: x( rand_int() % mat.rows )
+	, y( rand_int() % mat.cols )
+	, threshold( 5 )
+	, degrees( rand_int() % 360 )
 {
 
 }
