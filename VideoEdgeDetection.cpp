@@ -18,7 +18,7 @@ void readImageData(cv::VideoCapture& cap, cv::Mat& imgOriginal, int& retflag)
 	}
 }
 
-class Ball {
+struct Ball {
 	Ball() = default;
 	Ball(Ball const&) = default;
 	Ball& operator=(Ball const&) = default;
@@ -26,7 +26,8 @@ class Ball {
 	Ball& operator=(Ball&&) = default;
 	Ball(cv::Mat const& mat);
 
-	Ball collide(cv::Mat contours);
+	Ball collide(cv::Mat contours, int x, int y);
+private:
 	int x = 0;
 	int y = 0;
 	int threshold = 5;
@@ -42,9 +43,14 @@ Ball::Ball(cv::Mat const& mat)
 
 }
 
-Ball Ball::collide(cv::Mat contours)
+Ball Ball::collide(cv::Mat contours, int x , int y)
 {
-
+	Ball ret;
+	cv::Vec3b* center = contours.ptr<cv::Vec3b>(x);
+	int innenwinkel = center[y][1] - degrees;
+	ret.degrees = degrees - 2 * innenwinkel;
+	std::cout << degrees << ' ' << center[y][1] << ' ' << ret.degrees << '\n';
+	return ret;
 }
 
 int main(int argc, char** argv)
@@ -61,6 +67,7 @@ int main(int argc, char** argv)
 	namedWindow(original, cv::WINDOW_AUTOSIZE);
 	namedWindow(threshold, cv::WINDOW_AUTOSIZE);
 
+	int j = 0;
 	while (true)
 	{
 		cv::Mat imgOriginal;
@@ -68,7 +75,13 @@ int main(int argc, char** argv)
 		readImageData(cap, imgOriginal, retflag);
 		if (retflag == 2) break;
 		cv::Mat contours = od::detect_directions(imgOriginal);
-		//Ball ball(contours);
+
+		if (j++ == 0)
+		{
+			Ball ball(contours);
+			for (int i = 0; i < 100; i++)
+				ball.collide(contours, 100, 100);
+		}
 		//void moveBall(ball, contours);
 
 
