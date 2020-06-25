@@ -28,7 +28,6 @@ struct Ball {
 	Ball(cv::Mat const& mat);
 
 	Ball collide(cv::Mat contours, int x, int y);
-private:
 	int x = 0;
 	int y = 0;
 	int threshold = 5;
@@ -39,7 +38,7 @@ int rand_int()
 {
 	std::random_device rd;
 	std::mt19937 mt(rd());
-	std::uniform_real_distribution<int> dist(0, 110000);
+	std::uniform_int_distribution<int> dist(0, 110000);
 	return dist(mt);
 }
 
@@ -89,7 +88,7 @@ int main(int argc, char** argv)
 		{
 			Ball ball(contours);
 			for (int i = 0; i < 100; i++)
-				ball.collide(contours, 100, 100);
+				ball.collide(contours, i, 100);
 		}
 		//void moveBall(ball, contours);
 
