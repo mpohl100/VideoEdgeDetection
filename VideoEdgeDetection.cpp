@@ -55,9 +55,9 @@ Ball Ball::collide(cv::Mat contours, int x , int y)
 {
 	Ball ret;
 	cv::Vec3b* center = contours.ptr<cv::Vec3b>(x);
-	int innenwinkel = center[y][1] - degrees;
+	int innenwinkel = int(center[y][1]) - degrees;
 	ret.degrees = degrees - 2 * innenwinkel;
-	std::cout << degrees << ' ' << center[y][1] << ' ' << ret.degrees << '\n';
+	std::cout << degrees << ' ' << int(center[y][1]) << ' ' << ret.degrees << '\n';
 	return ret;
 }
 
