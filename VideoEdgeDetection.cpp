@@ -63,7 +63,9 @@ Ball Ball::collide(cv::Mat contours, int x , int y)
 
 int main(int argc, char** argv)
 {
-	cv::VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from web cam
+	//cv::VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from file
+	cv::VideoCapture cap(0); //capture the video from web cam
+
 	if (!cap.isOpened())  // if not success, exit program
 	{
 		std::cout << "Cannot open the web cam" << std::endl;
@@ -82,14 +84,14 @@ int main(int argc, char** argv)
 		int retflag;
 		readImageData(cap, imgOriginal, retflag);
 		if (retflag == 2) break;
-		cv::Mat contours = od::detect_directions(imgOriginal);
+		cv::Mat contours = od::detect_angles(imgOriginal);
 
-		if (j++ == 0)
-		{
-			Ball ball(contours);
-			for (int i = 0; i < 100; i++)
-				ball.collide(contours, i, 100);
-		}
+		//if (j++ == 0)
+		//{
+		//	Ball ball(contours);
+		//	for (int i = 0; i < 100; i++)
+		//		ball.collide(contours, i, 100);
+		//}
 		//void moveBall(ball, contours);
 
 

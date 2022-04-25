@@ -5,6 +5,7 @@ namespace detail {
 	enum class DetectionType {
 		Edge,
 		Gradient,
+		Angle,
 	};
 
 
@@ -27,7 +28,7 @@ namespace detail {
 		float grad_y = -grad_bc_tc + grad_tl_br * sqrt2 - grad_bl_tr * sqrt2;
 		float grad_total = std::sqrt(grad_x * grad_x + grad_y * grad_y);
 		grad = int(grad_total);
-		if (false) {
+		if constexpr(false) {
 			std::cout << "gradient of:\n";
 			std::cout << tl << " " << tc << " " << tl << '\n';
 			std::cout << cl << " " << cc << " " << cl << '\n';
@@ -43,8 +44,8 @@ namespace detail {
 			float cosAlpha = grad_x / grad_total;
 			float radians = std::acos(cosAlpha);
 			float degrees = radians * (180.0 / 3.1415926);
-			if (degrees < 0)
-				degrees += 180.0;
+			if (grad_y < 0)
+				degrees *= -1.0;
 			int degrees_ret = int(degrees);
 			if constexpr(false)
 			{
@@ -74,7 +75,7 @@ namespace detail {
 		const cv::Vec3b* imgLower;
 		for (int i = 1; i < bgrImg.rows - 1; ++i)
 		{
-			if constexpr (detectionType == DetectionType::Gradient)
+			if constexpr (detectionType == DetectionType::Gradient || detectionType == DetectionType::Angle)
 				retCenter = ret.ptr<cv::Vec3b>(i);
 			imgUpper = bgrImg.ptr<cv::Vec3b>(i - 1);
 			imgCenter = bgrImg.ptr<cv::Vec3b>(i);
@@ -86,20 +87,20 @@ namespace detail {
 				int degrees = 0;
 				for (int color = 0; color <= 2; color++)
 				{
-					auto ret = gradient<detectionType, 5>(imgUpper[j - 1][color], imgUpper[j][color], imgUpper[j + 1][color],
+					auto ret = gradient<detectionType, 40>(imgUpper[j - 1][color], imgUpper[j][color], imgUpper[j + 1][color],
 						imgCenter[j - 1][color], imgCenter[j][color], imgCenter[j + 1][color],
 						imgLower[j - 1][color], imgLower[j][color], imgLower[j + 1][color]);
 					int grad_c = 0;
 					if constexpr (detectionType == DetectionType::Edge)
 					{
 						grad_c = ret;
-						max = grad_c > max ? grad_c : max;
 					}
 					else
 					{
 						grad_c = ret.first;
 						degrees = ret.second;
 					}
+					max = grad_c > max ? grad_c : max;
 					sum += grad_c;
 				}
 				float val = float(max) / float(sum);
@@ -108,11 +109,33 @@ namespace detail {
 
 				if constexpr (detectionType == DetectionType::Edge)
 					ret.at<uchar>(i, j) = int(val);
-				else
+				else if(detectionType == DetectionType::Gradient)
 				{
 					retCenter[j][0] = int(val);
 					retCenter[j][1] = degrees;
 					retCenter[j][2] = 256;
+				}
+				else
+				{
+					retCenter[j][0] = 256;
+					retCenter[j][1] = 256;
+					retCenter[j][2] = 256;
+					if (val > 0)
+					{
+						if (degrees >= 0)
+						{
+							retCenter[j][0] = int(float(degrees) * 256.0 / 180.0);
+							retCenter[j][1] = 0;
+							retCenter[j][2] = 0;
+						}
+						else
+						{
+							retCenter[j][0] = 0;
+							retCenter[j][1] = int(float(-degrees) * 256.0 / 180.0);
+							retCenter[j][2] = 0;
+
+						}
+					}
 				}
 			}
 		}
