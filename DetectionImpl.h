@@ -112,8 +112,16 @@ namespace detail {
 				else if(detectionType == DetectionType::Gradient)
 				{
 					retCenter[j][0] = int(val);
-					retCenter[j][1] = degrees;
-					retCenter[j][2] = 256;
+					if (degrees >= 0)
+					{
+						retCenter[j][1] = degrees;
+						retCenter[j][2] = 0;
+					}
+					else
+					{
+						retCenter[j][1] = 0;
+						retCenter[j][2] = -degrees;
+					}
 				}
 				else
 				{

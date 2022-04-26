@@ -61,6 +61,34 @@ Ball Ball::collide(cv::Mat contours, int x , int y)
 	return ret;
 }
 
+double calculate_orientation(cv::Mat const& gradient)
+{
+	struct Point { double x = 0; double y = 0; };
+	struct PolarVec { double len = 0; double angle = 0; };
+	struct Data { PolarVec polarVec; Point point; };
+	std::vector<Data> directions;
+	directions.reserve(gradient.rows* gradient.cols);
+	const cv::Vec3b* currentRow;
+	double sumLen = 0;
+	for (auto i = 0; i < gradient.rows; ++i)
+	{
+		currentRow = gradient.ptr<cv::Vec3b>(i);
+		for (auto j = 0; j < gradient.cols; ++j)
+		{
+			double len = double(currentRow[j][0]);
+			if (len == 0.0)
+				continue;
+			double angle = currentRow[j][1] != 0 ? double(currentRow[j][1]) : double(-currentRow[j][2]);
+			directions.push_back({ { len, angle }, { i, j } });
+			sumLen += len;
+		}
+	}
+	double avgAngle = 0;
+	for (const auto& dir : directions) 
+		avgAngle += dir.polarVec.angle * dir.polarVec.len / sumLen;
+	return avgAngle;
+}
+
 int main(int argc, char** argv)
 {
 	//cv::VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from file
@@ -85,7 +113,9 @@ int main(int argc, char** argv)
 		readImageData(cap, imgOriginal, retflag);
 		if (retflag == 2) break;
 		cv::Mat contours = od::detect_angles(imgOriginal);
-
+		cv::Mat gradient = od::detect_directions(imgOriginal);
+		double avg_angle = calculate_orientation(gradient);
+		std::cout << avg_angle << '\n';
 		//if (j++ == 0)
 		//{
 		//	Ball ball(contours);
