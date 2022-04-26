@@ -87,7 +87,7 @@ namespace detail {
 				int degrees = 0;
 				for (int color = 0; color <= 2; color++)
 				{
-					auto ret = gradient<detectionType, 40>(imgUpper[j - 1][color], imgUpper[j][color], imgUpper[j + 1][color],
+					auto ret = gradient<detectionType, 20>(imgUpper[j - 1][color], imgUpper[j][color], imgUpper[j + 1][color],
 						imgCenter[j - 1][color], imgCenter[j][color], imgCenter[j + 1][color],
 						imgLower[j - 1][color], imgLower[j][color], imgLower[j + 1][color]);
 					int grad_c = 0;

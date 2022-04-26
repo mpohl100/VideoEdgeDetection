@@ -61,15 +61,19 @@ Ball Ball::collide(cv::Mat contours, int x , int y)
 	return ret;
 }
 
-double calculate_orientation(cv::Mat const& gradient)
+struct Point { double x = 0; double y = 0; };
+struct PolarVec { double len = 0; double angle = 0; };
+struct Data { PolarVec polarVec; Point point; };
+constexpr size_t N = 36;
+std::array<Point, N> calculate_orientation(cv::Mat const& gradient)
 {
-	struct Point { double x = 0; double y = 0; };
-	struct PolarVec { double len = 0; double angle = 0; };
-	struct Data { PolarVec polarVec; Point point; };
 	std::vector<Data> directions;
 	directions.reserve(gradient.rows* gradient.cols);
 	const cv::Vec3b* currentRow;
-	double sumLen = 0;
+	std::array<double, N> sumLen;
+	for (auto& d : sumLen)
+		d = 0.0;
+	std::array<Point, N> partials = { {} };
 	for (auto i = 0; i < gradient.rows; ++i)
 	{
 		currentRow = gradient.ptr<cv::Vec3b>(i);
@@ -79,14 +83,38 @@ double calculate_orientation(cv::Mat const& gradient)
 			if (len == 0.0)
 				continue;
 			double angle = currentRow[j][1] != 0 ? double(currentRow[j][1]) : double(-currentRow[j][2]);
-			directions.push_back({ { len, angle }, { i, j } });
-			sumLen += len;
+			directions.push_back({ { len, angle }, { double(i), double(j) } });
+			double factor = (angle + 180.0) / 360.0;
+			if (factor < 0)
+				factor = 0;
+			size_t index =  size_t(factor  * double(partials.size()));
+			if (index >= partials.size())
+				index = partials.size() - 1;
+			sumLen[index] += len;
 		}
 	}
-	double avgAngle = 0;
-	for (const auto& dir : directions) 
-		avgAngle += dir.polarVec.angle * dir.polarVec.len / sumLen;
-	return avgAngle;
+	std::array<int, N> num;
+	for (auto& i : num)
+		i = 0;
+	for (const auto& dir : directions)
+	{
+		double factor = (dir.polarVec.angle + 180.0) / 360.0;
+		if (factor < 0)
+			factor = 0;
+		size_t index = size_t(factor * double(partials.size()));
+		if (index >= partials.size())
+			index = partials.size() - 1;
+		partials[index].x += dir.point.x;
+		partials[index].y += dir.point.y;
+		num[index]++;
+	}
+	size_t index = 0;
+	for (auto& point : partials)
+	{
+		point.x /= double(num[index]);
+		point.y /= double(num[index++]);
+	}
+	return partials;
 }
 
 int main(int argc, char** argv)
@@ -114,8 +142,10 @@ int main(int argc, char** argv)
 		if (retflag == 2) break;
 		cv::Mat contours = od::detect_angles(imgOriginal);
 		cv::Mat gradient = od::detect_directions(imgOriginal);
-		double avg_angle = calculate_orientation(gradient);
-		std::cout << avg_angle << '\n';
+		auto partials = calculate_orientation(gradient);
+		size_t index = 0;
+		for (const auto& partial : partials)
+			cv::circle(contours, cv::Point(int(partial.x), int(partial.y)), 5, cv::Scalar(0, 0, 256));
 		//if (j++ == 0)
 		//{
 		//	Ball ball(contours);
