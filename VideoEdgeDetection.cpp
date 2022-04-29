@@ -64,7 +64,7 @@ Ball Ball::collide(cv::Mat contours, int x , int y)
 struct Point { double x = 0; double y = 0; };
 struct PolarVec { double len = 0; double angle = 0; };
 struct Data { PolarVec polarVec; Point point; };
-constexpr size_t N = 36;
+constexpr size_t N = 18;
 std::array<Point, N> calculate_orientation(cv::Mat const& gradient)
 {
 	std::vector<Data> directions;
@@ -104,16 +104,18 @@ std::array<Point, N> calculate_orientation(cv::Mat const& gradient)
 		size_t index = size_t(factor * double(partials.size()));
 		if (index >= partials.size())
 			index = partials.size() - 1;
-		partials[index].x += dir.point.x;
-		partials[index].y += dir.point.y;
+		partials[index].x += dir.point.x * dir.polarVec.len/sumLen[index];
+		partials[index].y += dir.point.y * dir.polarVec.len / sumLen[index];
 		num[index]++;
 	}
+#if 0
 	size_t index = 0;
 	for (auto& point : partials)
 	{
 		point.x /= double(num[index]);
 		point.y /= double(num[index++]);
 	}
+#endif
 	return partials;
 }
 
