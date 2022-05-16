@@ -151,7 +151,6 @@ void draw_bars(cv::Mat& result, std::array<Result, N> partials)
 	}
 }
 
-
 template<int N>
 std::array<Result, N> smooth_results(std::array<Result, N> const& partials, int M)
 {
@@ -171,7 +170,6 @@ std::array<Result, N> smooth_results(std::array<Result, N> const& partials, int 
 	return result;
 }
 
-
 int main(int argc, char** argv)
 {
 	//cv::VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from file
@@ -189,6 +187,7 @@ int main(int argc, char** argv)
 	namedWindow(threshold, cv::WINDOW_AUTOSIZE);
 
 	int j = 0;
+	std::array<Result, N> previous;
 	while (true)
 	{
 		cv::Mat imgOriginal;
@@ -197,17 +196,11 @@ int main(int argc, char** argv)
 		if (retflag == 2) break;
 		cv::Mat contours = od::detect_angles(imgOriginal);
 		cv::Mat gradient = od::detect_directions(imgOriginal);
+
 		auto partials = smooth_results(calculate_orientation(gradient), 10);
 		//for (const auto& partial : partials)
 		//	cv::circle(contours, cv::Point(int(partial.point.x), int(partial.point.y)), 5, cv::Scalar(0, 0, 256));
 		draw_bars(contours, partials);
-		//if (j++ == 0)
-		//{
-		//	Ball ball(contours);
-		//	for (int i = 0; i < 100; i++)
-		//		ball.collide(contours, i, 100);
-		//}
-		//void moveBall(ball, contours);
 
 
 		imshow(threshold, contours); //show the thresholded image
