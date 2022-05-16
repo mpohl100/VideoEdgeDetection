@@ -151,6 +151,27 @@ void draw_bars(cv::Mat& result, std::array<Result, N> partials)
 	}
 }
 
+
+template<int N>
+std::array<Result, N> smooth_results(std::array<Result, N> const& partials, int M)
+{
+	auto result = partials;
+	for (size_t i = 0; i < result.size(); ++i)
+	{
+		double sum = 0;
+		for (size_t j = i - M; j <= i; ++j)
+		{
+			size_t index = j;
+			if (index < 0)
+				index += N;
+			sum += partials[index].bar.len;
+		}
+		result[i].bar.len = sum / double(M);
+	}
+	return result;
+}
+
+
 int main(int argc, char** argv)
 {
 	//cv::VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from file
@@ -176,7 +197,7 @@ int main(int argc, char** argv)
 		if (retflag == 2) break;
 		cv::Mat contours = od::detect_angles(imgOriginal);
 		cv::Mat gradient = od::detect_directions(imgOriginal);
-		auto partials = calculate_orientation(gradient);
+		auto partials = smooth_results(calculate_orientation(gradient), 10);
 		//for (const auto& partial : partials)
 		//	cv::circle(contours, cv::Point(int(partial.point.x), int(partial.point.y)), 5, cv::Scalar(0, 0, 256));
 		draw_bars(contours, partials);
