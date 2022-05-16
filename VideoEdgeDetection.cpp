@@ -151,6 +151,101 @@ void draw_bars(cv::Mat& result, std::array<Result, N> partials)
 	}
 }
 
+template<int N>
+std::array<Result, N> subtract_results(std::array<Result, N> const& current, std::array<Result, N> const& previous)
+{
+	auto result = current;
+	for (size_t i = 0; i < result.size(); ++i)
+		result[i].bar.len -= previous[i].bar.len;
+	auto minIt = std::min_element(result.begin(), result.end(), [](const auto& l, const auto& r) { return l.bar.len < r.bar.len; });
+	if (minIt->bar.len >= 0)
+		return result;
+	for (size_t i = 0; i < result.size(); ++i)
+		result[i].bar.len -= minIt->bar.len;
+	return result;
+}
+
+template<int N>
+std::array<Result, N> smooth_results(std::array<Result, N> const& partials, int M)
+{
+	auto result = partials;
+	for (size_t i = 0; i < result.size(); ++i)
+	{
+		double sum = 0;
+		for (size_t j = i - M; j <= i; ++j)
+		{
+			size_t index = j;
+			if (index < 0)
+				index += N;
+			sum += partials[index].bar.len;
+		}
+		result[i].bar.len = sum / double(M);
+	}
+	return result;
+}
+
+cv::Mat smooth_angles(cv::Mat const& angles, int rings, bool onlyRecordAngles)
+{
+	cv::Mat result = angles;
+	std::vector<const cv::Vec3b*> rows;
+	cv::Vec3b* resultRow = nullptr;
+	for (size_t i = 0; i < 2 * rings + 1; ++i)
+		rows.push_back(nullptr);
+	for (int i = rings; i < angles.rows - rings; ++i)
+	{
+		resultRow = result.ptr<cv::Vec3b>(i);
+		size_t index = 0;
+		for (size_t j = i - rings; j < i + rings + 1; ++j)
+			rows[index++] = angles.ptr<cv::Vec3b>(j);
+		for (int j = rings; j < angles.cols - rings; ++j) 
+		{
+			double sumAngle = 0;
+			double sumLen = 0;
+
+			for (int k = 0; k < int(rows.size()); ++k)
+				for(int l = j - rings; l < j + rings + 1; ++l)
+				{
+
+					double len = double(rows[k][l][0]);
+					if (len > 0) 
+					{
+						sumLen += len;
+						if (rows[k][l][1] > 0)
+							sumAngle += len * rows[k][l][1];
+						else
+							sumAngle += len * rows[k][l][2];
+					}
+				}
+			if (sumLen == 0)
+			{
+				resultRow[j][0] = 0;
+				resultRow[j][1] = 0;
+				resultRow[j][2] = 0;
+			}
+			else
+			{
+				int nb = 2 * rings + 1;
+				nb *= nb; // squared
+				double angle = sumAngle / sumLen;
+				double len = sumLen / nb;
+				if (!onlyRecordAngles)
+					resultRow[j][0] = int(len);
+				else
+					resultRow[j][0] = 0;
+				if (angle > 0)
+				{
+					resultRow[j][1] = int(angle);
+				}
+				else
+				{
+					resultRow[j][2] = int(-angle);
+				}
+			}
+		}
+	}
+	return result;
+}
+
 int main(int argc, char** argv)
 {
 	//cv::VideoCapture cap("D:\ToiletBank.mp4"); //capture the video from file
@@ -168,6 +263,7 @@ int main(int argc, char** argv)
 	namedWindow(threshold, cv::WINDOW_AUTOSIZE);
 
 	int j = 0;
+	std::array<Result, N> previous;
 	while (true)
 	{
 		cv::Mat imgOriginal;
@@ -176,17 +272,18 @@ int main(int argc, char** argv)
 		if (retflag == 2) break;
 		cv::Mat contours = od::detect_angles(imgOriginal);
 		cv::Mat gradient = od::detect_directions(imgOriginal);
+		int rings = 1;
+		auto smoothed_contours = smooth_angles(gradient, rings, true);
+		auto smoothed_gradient = smooth_angles(gradient, rings, false);
+		
 		auto partials = calculate_orientation(gradient);
 		//for (const auto& partial : partials)
 		//	cv::circle(contours, cv::Point(int(partial.point.x), int(partial.point.y)), 5, cv::Scalar(0, 0, 256));
+		if (j++ == 0)
+			previous = partials;
+		//auto diff = subtract_results(partials, previous);
 		draw_bars(contours, partials);
-		//if (j++ == 0)
-		//{
-		//	Ball ball(contours);
-		//	for (int i = 0; i < 100; i++)
-		//		ball.collide(contours, i, 100);
-		//}
-		//void moveBall(ball, contours);
+		previous = partials;
 
 
 		imshow(threshold, contours); //show the thresholded image
