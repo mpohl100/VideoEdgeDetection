@@ -186,7 +186,7 @@ std::array<Result, N> smooth_results(std::array<Result, N> const& partials, int 
 
 cv::Mat smooth_angles(cv::Mat const& angles, int rings, bool onlyRecordAngles)
 {
-	cv::Mat result = angles;
+	cv::Mat result = angles.clone();
 	std::vector<const cv::Vec3b*> rows;
 	cv::Vec3b* resultRow = nullptr;
 	for (size_t i = 0; i < 2 * rings + 1; ++i)
@@ -210,35 +210,53 @@ cv::Mat smooth_angles(cv::Mat const& angles, int rings, bool onlyRecordAngles)
 					if (len > 0) 
 					{
 						sumLen += len;
-						if (rows[k][l][1] > 0)
-							sumAngle += len * rows[k][l][1];
+						int angle = rows[k][l][1];
+						if (angle > 0)
+							sumAngle += len * angle;
 						else
-							sumAngle += len * rows[k][l][2];
+							sumAngle -= len * rows[k][l][2];
 					}
 				}
-			if (sumLen == 0)
+
+			int nb = 2 * rings + 1;
+			nb *= nb; // squared
+			if (sumLen / nb < 20)
 			{
-				resultRow[j][0] = 0;
-				resultRow[j][1] = 0;
-				resultRow[j][2] = 0;
+				resultRow[j][0] = 256;
+				resultRow[j][1] = 256;
+				resultRow[j][2] = 256;
 			}
 			else
 			{
-				int nb = 2 * rings + 1;
-				nb *= nb; // squared
 				double angle = sumAngle / sumLen;
 				double len = sumLen / nb;
-				if (!onlyRecordAngles)
-					resultRow[j][0] = int(len);
-				else
-					resultRow[j][0] = 0;
+				resultRow[j][0] = int(len);
 				if (angle > 0)
 				{
-					resultRow[j][1] = int(angle);
+					if (!onlyRecordAngles) {
+						resultRow[j][1] = int(angle);
+						resultRow[j][2] = 0;
+					}
+					else
+					{
+						resultRow[j][0] = int(angle * 256.0 / 180.0);
+						resultRow[j][1] = 0;
+						resultRow[j][2] = 0;
+					}
 				}
 				else
 				{
-					resultRow[j][2] = int(-angle);
+					if (!onlyRecordAngles) {
+						resultRow[j][1] = 0;
+						resultRow[j][2] = int(-angle);
+					}
+					else 
+					{
+						resultRow[j][0] = 0;
+						int angleInt = int(-angle * 256.0 / 180.0);
+						resultRow[j][1] = angleInt;
+						resultRow[j][2] = 0;
+					}
 				}
 			}
 		}
@@ -272,21 +290,21 @@ int main(int argc, char** argv)
 		if (retflag == 2) break;
 		cv::Mat contours = od::detect_angles(imgOriginal);
 		cv::Mat gradient = od::detect_directions(imgOriginal);
-		int rings = 1;
+		int rings = 3;
 		auto smoothed_contours = smooth_angles(gradient, rings, true);
 		auto smoothed_gradient = smooth_angles(gradient, rings, false);
 		
-		auto partials = calculate_orientation(gradient);
+		auto partials = calculate_orientation(smoothed_gradient);
 		//for (const auto& partial : partials)
 		//	cv::circle(contours, cv::Point(int(partial.point.x), int(partial.point.y)), 5, cv::Scalar(0, 0, 256));
 		if (j++ == 0)
 			previous = partials;
 		//auto diff = subtract_results(partials, previous);
-		draw_bars(contours, partials);
+		draw_bars(smoothed_contours, partials);
 		previous = partials;
 
 
-		imshow(threshold, contours); //show the thresholded image
+		imshow(threshold, smoothed_contours); //show the thresholded image
 		imshow(original, imgOriginal); //show the original image
 
 		if (cv::waitKey(30) == 27) //wait for 'esc' key press for 30ms. If 'esc' key is pressed, break loop
