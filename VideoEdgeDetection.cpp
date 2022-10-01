@@ -7,6 +7,8 @@
 #include <iostream>
 #include <set>
 #include <random>
+
+#include "Algo.h"
 #include "VideoEdgeDetection.h"
 
 void readImageData(cv::VideoCapture& cap, cv::Mat& imgOriginal, int& retflag)
@@ -295,6 +297,12 @@ int main(int argc, char** argv)
 		auto smoothed_gradient = smooth_angles(gradient, rings, false);
 		
 		auto partials = calculate_orientation(smoothed_gradient);
+		std::vector<double> values;
+		for (const auto& partial : partials)
+		{
+			values.push_back(partial.bar.len);
+		}
+		auto maxima = od::find_extremes<0>(values, od::ExtremeType::Maximum);
 		//for (const auto& partial : partials)
 		//	cv::circle(contours, cv::Point(int(partial.point.x), int(partial.point.y)), 5, cv::Scalar(0, 0, 256));
 		if (j++ == 0)

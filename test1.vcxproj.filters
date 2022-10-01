@@ -44,5 +44,8 @@
     <ClCompile Include="Detection.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Algo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

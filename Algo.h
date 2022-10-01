@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unordered_map>
 #include <vector>
 
 namespace od {
@@ -94,10 +95,28 @@ std::vector<LocalExtreme<barrier>> find_extremes(std::vector<double> const& valu
 	{
 		std::vector<LocalExtreme<0>> minima = find_extremes<0>(values, ExtremeType::Minimum);
 		std::vector<LocalExtreme<0>> maxima = find_extremes<0>(values, ExtremeType::Maximum);
-
+		static_assert(false, "LocalExtreme with barrier other than zero was initially planned but not yet implemented.");
 	}
-	
-
 }
+
+class BarSequence {
+public:
+	BarSequence() = default;
+	BarSequence(BarSequence const&) = default;
+	BarSequence& operator=(BarSequence const&) = default;
+	BarSequence(BarSequence&&) = default;
+	BarSequence& operator=(BarSequence&&) = default;
+
+	BarSequence(size_t len);
+
+	void addBars(std::vector<double> values);
+
+
+private:
+	void calculateExtremes();
+	size_t len_ = 5;
+	std::vector<std::vector<double>> bars_;
+	std::unordered_map<int, std::vector<LocalExtreme<0>>> extremes_;
+};
 
 }

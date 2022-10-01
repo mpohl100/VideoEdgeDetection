@@ -164,6 +164,7 @@
     <ClInclude Include="VideoEdgeDetection.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Algo.cpp" />
     <ClCompile Include="Detection.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
