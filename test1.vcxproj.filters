@@ -30,6 +30,9 @@
     <ClInclude Include="DetectionImpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Algo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

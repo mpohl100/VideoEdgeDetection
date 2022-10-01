@@ -156,6 +156,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Algo.h" />
     <ClInclude Include="Detection.h" />
     <ClInclude Include="DetectionImpl.h" />
     <ClInclude Include="stdafx.h" />
