@@ -99,15 +99,15 @@ std::vector<LocalExtreme<barrier>> find_extremes(std::vector<double> const& valu
 	}
 }
 
-class BarSequence {
+class BarMatrix {
 public:
-	BarSequence() = default;
-	BarSequence(BarSequence const&) = default;
-	BarSequence& operator=(BarSequence const&) = default;
-	BarSequence(BarSequence&&) = default;
-	BarSequence& operator=(BarSequence&&) = default;
+	BarMatrix() = default;
+	BarMatrix(BarMatrix const&) = default;
+	BarMatrix& operator=(BarMatrix const&) = default;
+	BarMatrix(BarMatrix&&) = default;
+	BarMatrix& operator=(BarMatrix&&) = default;
 
-	BarSequence(size_t len);
+	BarMatrix(size_t len);
 
 	void addBars(std::vector<double> values);
 

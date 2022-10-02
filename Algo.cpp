@@ -2,8 +2,11 @@
 
 #include "Algo.h"
 
+#include <algorithm>
+#include <cmath>
+
 namespace od {
-	void BarSequence::addBars(std::vector<double> values)
+	void BarMatrix::addBars(std::vector<double> values)
 	{
 		if (bars_.size() >= len_) 
 		{
@@ -23,9 +26,47 @@ namespace od {
 		// secondly we assume that the relative order of the maxima has not changed
 		// and analyse with a rotate of the remaining next maxima, which configuration 
 		// provides the least movement of the maxima
+
+		// second idea for an algorithm
+		// a precondition is that both seqences are sorted, so if they both have the same size
+		// one does not need to examine the maxima in any way
+		// if the sequences diverge in size then we take the size difference as lookahead size
+		// and we insert the maximum with the least amount of wandering as the mapped element,
+		// the skipped maxima are the ones that newly emerged or that disappeared
+		if (previous.size() == next.size()) 
+		{
+			for (size_t i = 0; i < previous.size(); ++i)
+			{
+				// return one to one mapping as all the maxima are sorted
+				ret.push_back({ i, i });
+			}
+			return ret;
+		}
+		auto& shorter = previous.size() < next.size() ? previous : next;
+		auto& longer = previous.size() < next.size() ? next : previous;
+		size_t N = longer.size() - shorter.size();
+		size_t actualShift = 0;
+		for (size_t i = 0; i < shorter.size(); ++i)
+		{
+			auto it = std::min_element(longer.begin() + i + actualShift,
+				longer.begin() + i + N,
+				[shorter, i](const auto& l, const auto& r) {
+					return std::abs(static_cast<int>(l.mid) - static_cast<int>(shorter[i].mid)) 
+						< std::abs(static_cast<int>(r.mid) - static_cast<int>(shorter[i].mid));
+				});
+			actualShift += std::distance(longer.begin() + i + actualShift, it);
+			ret.push_back({ i, i + actualShift });
+		}
+		if (shorter.size() == next.size()) {
+			for (auto& pr : ret) 
+			{
+				std::swap(pr.first, pr.second);
+			}
+		}
+		return ret;
 	}
 
-	void BarSequence::calculateExtremes()
+	void BarMatrix::calculateExtremes()
 	{
 		extremes_ = {}; // todo optimize to minimal work
 		// firstly we enter the maxima of the first bar vector into the extremes container
@@ -40,7 +81,7 @@ namespace od {
 
 	}
 
-	BarSequence::BarSequence(size_t len)
+	BarMatrix::BarMatrix(size_t len)
 		: len_(len)
 	{
 	}
